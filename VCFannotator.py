@@ -125,9 +125,9 @@ class VCFrec:
                 alt = re.sub(r'\*', '.', alt)
 
                 if re.search(r'[^ATGCatgc]', self.ref):
-                    print("WARNING - Wrong symbol in reference sequence: {}".format(self.ref))
+                    print('\t'.join((self.chrom, self.pos, self.ref, alt, 'wrong symbol in REF')))
                 if re.search(r'[^ATGCatgc,.]', alt):
-                    print("WARNING - Wrong symbol in alternative sequence: {}".format(alt))
+                    print('\t'.join((self.chrom, self.pos, self.ref, alt, 'wrong symbol in ALT')))
 
                 self.alt = re.split(r',', alt)
                 if len(fields) > 9:
@@ -285,8 +285,9 @@ class VCF:
                     (t1.ref = t2.ref AND t1.alt = t2.alt OR t1.ref = t2.alt AND t1.alt = t2.ref)
                     ORDER BY t1.n_rec, t1.n_alt; """
 
-        header = ('#_rec', 'n_alt', 'chrom', 'pos', 'var_id', 'ref', 'alt', 'qual', 'filter', 'info', 'format',
-                  'samples', 'snp_id', 'snp_ref', 'snp_alt', 'snp_info')
+        header = ['#_rec', 'N_allele']
+        header += [re.sub(r'^#|\s+$', '', col) for col in re.split(r'\t', self._columns)]
+        header += ['snp_id', 'snp_ref', 'snp_alt', 'snp_info']
 
         n = 0
         try:
@@ -320,14 +321,14 @@ def main():
     if not os.path.exists(an_db_file):
         an_vcf = VCF(an_file)
         an_vcf.load2db(an_db_file)
-        an_vcf = None  # to destroy the internal database object and release the database file
+        an_vcf = None  # to destroy the internal database object and release its database file
 
     in_vcf = VCF(in_file)
     in_vcf.load2db()
 
     n_annotated_rows = in_vcf.annotation2csv(an_db_file, out_file)
 
-    print('{} rows in the output file\ndone...'.format(n_annotated_rows))
+    print('{} rows were annotated\ndone...'.format(n_annotated_rows))
 
 
 if __name__ == "__main__":
