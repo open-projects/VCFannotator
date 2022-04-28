@@ -1,2 +1,2 @@
 # VCFannotator
-A tool to annotate VCF files
+A bioinformatics tool to annotate VCF files
