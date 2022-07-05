@@ -157,8 +157,8 @@ class VCFrec:
 
         return record
 
-    def mod_info_freq(self, n_alt):
-        re_freq = re.search(r'FREQ=([^;]+)', self.info)
+    def mod_info_freq(self, n_alt, info):
+        re_freq = re.search(r'FREQ=([^;]+)', info)
         mod_freq = ''
         if re_freq:
             freq_group = re_freq.group(1)
@@ -166,7 +166,7 @@ class VCFrec:
                 freq_ver, freq_set = re.split(r':', pop_freq)
                 freq_array = re.split(r',', freq_set)
                 if len(freq_array) < 2 or len(freq_array) != len(self.alt) + 1:
-                    raise ValueError("ERROR - Wrong allele frequency data: '{}'".format(self.info))
+                    raise ValueError("ERROR - Wrong allele frequency (FREQ) data: '{}'".format(info))
 
                 ref_freq = freq_array[0]
                 alt_freq = freq_array[n_alt]
@@ -176,11 +176,56 @@ class VCFrec:
                 else:
                     mod_freq = 'FREQ=' + freq_ver + ':' + ref_freq + ',' + alt_freq
 
-            mod_info = re.sub(r'FREQ=[^;]+', mod_freq, self.info)
+            mod_info = re.sub(r'FREQ=[^;]+', mod_freq, info)
 
             return mod_info
 
-        return self.info
+        return info
+
+    def mod_info_af(self, n_alt, info):
+        re_freq = re.search(r'AF=([^;]+)', info)
+        if re_freq:
+            freq_array = re.split(r',', re_freq.group(1))
+            if len(freq_array) > 1:
+                if len(freq_array) != len(self.alt) or len(self.alt) < n_alt or n_alt < 1:
+                    raise ValueError("ERROR - Wrong allele frequency (AF) data: '{}'".format(info))
+
+                alt_freq = freq_array[n_alt - 1]
+                mod_info = re.sub(r'AF=[^;]+', 'AF=' + alt_freq, info)
+
+                return mod_info
+
+        return info
+
+    def mod_info_af_healthy(self, n_alt, info):
+        re_freq = re.search(r'AF_healthy=([^;]+)', info)
+        if re_freq:
+            freq_array = re.split(r',', re_freq.group(1))
+            if len(freq_array) > 1:
+                if len(freq_array) != len(self.alt) or len(self.alt) < n_alt or n_alt < 1:
+                    raise ValueError("ERROR - Wrong allele frequency (AF) data: '{}'".format(info))
+
+                alt_freq = freq_array[n_alt - 1]
+                mod_info = re.sub(r'AF_healthy=[^;]+', 'AF_healthy=' + alt_freq, info)
+
+                return mod_info
+
+        return info
+
+    def mod_info_af_diseased(self, n_alt, info):
+        re_freq = re.search(r'AF_diseased=([^;]+)', info)
+        if re_freq:
+            freq_array = re.split(r',', re_freq.group(1))
+            if len(freq_array) > 1:
+                if len(freq_array) != len(self.alt) or len(self.alt) < n_alt or n_alt < 1:
+                    raise ValueError("ERROR - Wrong allele frequency (AF) data: '{}'".format(info))
+
+                alt_freq = freq_array[n_alt - 1]
+                mod_info = re.sub(r'AF_diseased=[^;]+', 'AF_diseased=' + alt_freq, info)
+
+                return mod_info
+
+        return info
 
     def get_array(self):
         array = []
@@ -196,7 +241,15 @@ class VCFrec:
                     alt,
                     self.qual,
                     self.filter,
-                    self.mod_info_freq(n_alt),
+                    self.mod_info_af_diseased(n_alt,
+                        self.mod_info_af_healthy(n_alt,
+                            self.mod_info_af(n_alt,
+                                self.mod_info_freq(n_alt,
+                                    self.info
+                                )
+                            )
+                        )
+                    ),  # must be rewritten!
                     self.format,
                     '\t'.join(self.samples)
                 ])
